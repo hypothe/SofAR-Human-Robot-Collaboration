@@ -154,6 +154,15 @@ add_executable(baxter_stop_interface src/bxtr_stop_interface.cpp)
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(baxter_test_interface
+	${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
+)
+add_dependencies(baxter_user_interface
+	${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
+)
+add_dependencies(baxter_stop_interface
+	${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
+)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(baxter_test_interface
@@ -166,6 +175,9 @@ target_link_libraries(baxter_user_interface
 target_link_libraries(baxter_stop_interface
   ${catkin_LIBRARIES}
 )
+
+
+
 
 #############
 ## Install ##
