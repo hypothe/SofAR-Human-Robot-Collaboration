@@ -3,7 +3,7 @@
 import rospy
 
 from ros_tcp_endpoint import TcpServer, RosPublisher, RosSubscriber, RosService
-from human_baxter_collaboration.msg import BaxterTrajectory, UnityTf
+from human_baxter_collaboration.msg import BaxterTrajectory, UnityTf, BaxterStopTrajectory, BaxterGripperOpen
 from geometry_msgs.msg import Quaternion, Pose
 from sensor_msgs.msg import JointState
 
@@ -16,7 +16,10 @@ def main():
     tcp_server.start({
     	'unity_tf': RosPublisher('unity_tf', UnityTf, queue_size=100),
     	'baxter_joint_states': RosPublisher('baxter_joint_states', JointState, queue_size=100),
+    	'baxter_moveit_stop_trajectory': RosSubscriber('baxter_moveit_stop_trajectory', BaxterStopTrajectory, tcp_server),
     	'baxter_moveit_trajectory': RosSubscriber('baxter_moveit_trajectory', BaxterTrajectory, tcp_server),
+    	'robot/limb/left/left_gripper': RosSubscriber('robot/limb/left/left_gripper', BaxterGripperOpen, tcp_server),
+    	'robot/limb/right/right_gripper': RosSubscriber('robot/limb/right/right_gripper', BaxterGripperOpen, tcp_server),
     })
     
     rospy.spin()

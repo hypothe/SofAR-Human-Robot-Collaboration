@@ -1,0 +1,5 @@
+# User's input pose
+geometry_msgs/Point position
+geometry_msgs/Point rpy
+---
+bool success
