@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   moveit_ros_planning_interface
   human_baxter_collaboration
   tf2_geometry_msgs
+  std_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -112,7 +113,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES hrc_01
-  CATKIN_DEPENDS moveit_msgs geometry_msgs sensor_msgs
+  CATKIN_DEPENDS moveit_msgs geometry_msgs sensor_msgs message_runtime
 #  DEPENDS system_lib
 )
 

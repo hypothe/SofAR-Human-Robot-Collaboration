@@ -3,13 +3,10 @@
 #include "ros/ros.h"
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
-#include "hrc_01/BaxterCmd.h"
 #include "geometry_msgs/Pose.h"
 #include "iostream"
-
+#include "hrc_01/BaxterCmd.h"
 using Pose = geometry_msgs::Pose;
-
-
 
 hrc_01::BaxterCmd user_input(){
 	double r, p, y;
