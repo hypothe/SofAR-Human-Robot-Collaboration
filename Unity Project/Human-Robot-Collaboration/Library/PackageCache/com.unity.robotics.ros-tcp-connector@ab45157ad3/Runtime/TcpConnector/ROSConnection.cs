@@ -225,6 +225,7 @@ public class ROSConnection : MonoBehaviour
     void RosUnityHandshakeCallback(UnityHandshakeResponse response)
     {
         StartMessageServer(response.ip, unityPort);
+		Debug.Log("Response IP: "+ response.ip);
     }
 
     void RosUnityErrorCallback(RosUnityError error)
@@ -349,10 +350,15 @@ public class ROSConnection : MonoBehaviour
             {
                 if (!Application.isPlaying)
                     break;
-                tcpListener = new TcpListener(IPAddress.Parse(ip), port);
+                //tcpListener = new TcpListener(IPAddress.Parse(ip), port);
+				
+				/*	Seems unity doesn't like the addr. Too bad for it.	*/
+				tcpListener = new TcpListener(IPAddress.Any, port);
                 tcpListener.Start();
 
-                Debug.Log("ROS-Unity server listening on " + ip + ":" + port);
+                Debug.Log("ROS-Unity server listening on " + 
+					(IPAddress.Parse(((IPEndPoint)tcpListener.LocalEndpoint).Address.ToString()) + ":" + 
+										((IPEndPoint)tcpListener.LocalEndpoint).Port.ToString()));
 
                 while (true)   //we wait for a connection
                 {
@@ -483,6 +489,7 @@ public class ROSConnection : MonoBehaviour
         try
         {
             client = new TcpClient();
+			/*	Sending is done on localhost dut to container port-forwarding	*/
             await client.ConnectAsync(rosIPAddress, rosPort);
 
             NetworkStream networkStream = client.GetStream();

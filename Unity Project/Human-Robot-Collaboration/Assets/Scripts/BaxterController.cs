@@ -35,6 +35,8 @@ public class BaxterController : MonoBehaviour
     private Transform gripperBaseR;
     private Transform leftGripperRGameObject;
     private Transform rightGripperRGameObject;
+	
+	private IEnumerator trajCoroutine = null;
 
     private string[] jointNames =
     {
@@ -146,6 +148,32 @@ public class BaxterController : MonoBehaviour
         leftGripperR = leftGripperRGameObject.GetComponent<ArticulationBody>();
     }
 
+    public void GripperLResponse(BaxterGripperOpen response)
+    {
+        if (response.open_gripper == true)
+        {
+            Debug.Log("Open left gripper.");
+			OpenGripper("left");
+        }
+        else
+        {
+            Debug.Log("Close left gripper.");
+			CloseGripper("left");
+        }
+    }
+    public void GripperRResponse(BaxterGripperOpen response)
+    {
+        if (response.open_gripper == true)
+        {
+            Debug.Log("Open right gripper.");
+			OpenGripper("right");
+        }
+        else
+        {
+            Debug.Log("Close right gripper.");
+			CloseGripper("right");
+        }
+    }
     private void CloseGripper(string side)
     {
 
@@ -339,12 +367,26 @@ public class BaxterController : MonoBehaviour
     {
         if (response.trajectory.Length > 0)
         {
+			/*if (response.arm == "right_hand")*/
             Debug.Log("Trajectory returned.");
-            StartCoroutine(ExecuteTrajectories(response));
+			trajCoroutine = ExecuteTrajectories(response);
+            StartCoroutine(trajCoroutine);
         }
         else
         {
             Debug.LogError("No trajectory returned from MoverService.");
+        }
+    }
+	public void StopTrajectoryResponse(BaxterStopTrajectory response)
+    {
+		if (trajCoroutine != null)
+		{
+			StopCoroutine(trajCoroutine);
+			Debug.Log("Trajectory execution stopped.");
+		}
+		else
+        {
+            Debug.Log("No trajectory going on.");
         }
     }
 
@@ -393,19 +435,26 @@ public class BaxterController : MonoBehaviour
                     lastJointState = result;
 
                 }
-                if (poseIndex == (int)Poses.PreGrasp)
-                    OpenGripper(response.arm);
-                // Close the gripper if completed executing the trajectory for the Grasp pose
-                else if (poseIndex == (int)Poses.Grasp)
-                    CloseGripper(response.arm);
+				// ELIMINATED DUE TO OBST AVOIDANCE INCOMPATIBILITY
+                /* 
+					if (poseIndex == (int)Poses.PreGrasp)
+						OpenGripper(response.arm);
+					// Close the gripper if completed executing the trajectory for the Grasp pose
+					else if (poseIndex == (int)Poses.Grasp)
+						CloseGripper(response.arm); 
+				*/
 
                 // Wait for the robot to achieve the final pose from joint assignment                
             }
             // All trajectories have been executed, open the gripper to place the target cube
-            yield return new WaitForSeconds(poseAssignmentWait);
-            OpenGripper(response.arm);
-            yield return new WaitForSeconds(poseAssignmentWait);
-            GoToRestPosition(response.arm);
+			
+			// ELIMINATED DUE TO OBST AVOIDANCE INCOMPATIBILITY
+			/*
+				yield return new WaitForSeconds(poseAssignmentWait);
+				OpenGripper(response.arm);
+				yield return new WaitForSeconds(poseAssignmentWait);
+				GoToRestPosition(response.arm);
+			*/
         }
     }
 }

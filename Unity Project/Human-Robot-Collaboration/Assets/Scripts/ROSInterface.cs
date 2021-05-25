@@ -9,8 +9,11 @@ public class ROSInterface : MonoBehaviour
     
     // Variables required for ROS communication
     public string trajectoryTopicName = "baxter_moveit_trajectory";
+    public string stopTrajectoryTopicName = "baxter_moveit_stop_trajectory";
     public string unityTfTopicName = "unity_tf";
     public string jointStateTopicName = "baxter_joint_states";
+    public string gripperLTopicName = "robot/limb/left/left_gripper";
+    public string gripperRTopicName = "robot/limb/right/right_gripper";
 
     public GameObject baxter;
     public GameObject avatar;
@@ -41,6 +44,11 @@ public class ROSInterface : MonoBehaviour
 
         // Subscribe to MoveIt trajectory topic
         ros.Subscribe<BaxterTrajectory>(trajectoryTopicName, controller.TrajectoryResponse);
+		// Subscribe to stop trajectory event
+        ros.Subscribe<BaxterStopTrajectory>(stopTrajectoryTopicName, controller.StopTrajectoryResponse);
+		// Subscribe to gripper
+        ros.Subscribe<BaxterGripperOpen>(gripperLTopicName, controller.GripperLResponse);
+        ros.Subscribe<BaxterGripperOpen>(gripperRTopicName, controller.GripperRResponse);
 
         // Instantiate TF Manager component
         tfManager = gameObject.AddComponent<TFManager>();
