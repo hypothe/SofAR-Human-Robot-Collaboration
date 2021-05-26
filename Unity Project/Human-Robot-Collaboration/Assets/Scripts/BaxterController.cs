@@ -9,6 +9,7 @@ using JointState = RosMessageTypes.Sensor.JointState;
 using Header = RosMessageTypes.Std.Header;
 using Time = RosMessageTypes.Std.Time;
 using System.Linq;
+using System.Collections.Generic;
 
 public class BaxterController : MonoBehaviour
 {
@@ -36,7 +37,7 @@ public class BaxterController : MonoBehaviour
     private Transform leftGripperRGameObject;
     private Transform rightGripperRGameObject;
 	
-	private IEnumerator trajCoroutine = null;
+	private Dictionary<string, IEnumerator> trajCoroutine = new Dictionary<string, IEnumerator>();
 
     private string[] jointNames =
     {
@@ -109,7 +110,8 @@ public class BaxterController : MonoBehaviour
 
         rightGripperL = rightGripperLGameObject.GetComponent<ArticulationBody>();
         leftGripperL = leftGripperLGameObject.GetComponent<ArticulationBody>();
-
+		
+		trajCoroutine.Add(side, null);
 
         side = "right";
         rightJointArticulationBodies = new ArticulationBody[numRobotJoints];
@@ -146,6 +148,8 @@ public class BaxterController : MonoBehaviour
 
         rightGripperR = rightGripperRGameObject.GetComponent<ArticulationBody>();
         leftGripperR = leftGripperRGameObject.GetComponent<ArticulationBody>();
+		
+		trajCoroutine.Add(side, null);
     }
 
     public void GripperLResponse(BaxterGripperOpen response)
@@ -367,22 +371,34 @@ public class BaxterController : MonoBehaviour
     {
         if (response.trajectory.Length > 0)
         {
-			/*if (response.arm == "right_hand")*/
+			if (!trajCoroutine.ContainsKey(response.arm)){
+				Debug.LogError("Wrong 'arm' value, received " + response.arm);
+			}
+			
+			if (trajCoroutine[response.arm] != null)
+			{
+				StopCoroutine(trajCoroutine[response.arm]);
+			}
+			trajCoroutine[response.arm] = ExecuteTrajectories(response);
+			
             Debug.Log("Trajectory returned.");
-			trajCoroutine = ExecuteTrajectories(response);
-            StartCoroutine(trajCoroutine);
         }
         else
         {
             Debug.LogError("No trajectory returned from MoverService.");
         }
     }
+	
 	public void StopTrajectoryResponse(BaxterStopTrajectory response)
     {
-		if (trajCoroutine != null)
+		if (!trajCoroutine.ContainsKey(response.arm)){
+			Debug.LogError("Wrong 'arm' value, received " + response.arm);
+		}
+		if (trajCoroutine[response.arm] != null)
 		{
-			StopCoroutine(trajCoroutine);
-			Debug.Log("Trajectory execution stopped.");
+			StopCoroutine(trajCoroutine[response.arm]);
+			trajCoroutine[response.arm] = null;
+			Debug.Log("Trajectory " + response.arm + " execution stopped.");
 		}
 		else
         {
@@ -392,69 +408,74 @@ public class BaxterController : MonoBehaviour
 
     private IEnumerator ExecuteTrajectories(BaxterTrajectory response)
     {
-        if (response.trajectory != null)
+        if (response.trajectory == null)
         {
-            var currentJointConfig = CurrentJointConfig(response.arm);
-            float[] lastJointState = {
-                (float)currentJointConfig.joint_00,
-                (float)currentJointConfig.joint_01,
-                (float)currentJointConfig.joint_02,
-                (float)currentJointConfig.joint_03,
-                (float)currentJointConfig.joint_04,
-                (float)currentJointConfig.joint_05,
-                (float)currentJointConfig.joint_06,
-            };
-            // For every trajectory plan returned
-            int steps = 100;
-            var articulationBodies = leftJointArticulationBodies;
-            if (response.arm == "right")
-            {
-                articulationBodies = rightJointArticulationBodies;
-            }
-            for (int poseIndex = 0; poseIndex < response.trajectory.Length; poseIndex++)
-            {
-                // For every robot pose in trajectory plan
-                for (int jointConfigIndex = 0; jointConfigIndex < response.trajectory[poseIndex].joint_trajectory.points.Length; jointConfigIndex++)
-                {
-                    var jointPositions = response.trajectory[poseIndex].joint_trajectory.points[jointConfigIndex].positions;
-                    float[] result = jointPositions.Select(r => (float)r * Mathf.Rad2Deg).ToArray();
-                    for (int i = 0; i <= steps; i++)
-                    {
-                        for (int joint = 0; joint < articulationBodies.Length; joint++)
-                        {
-                            var joint1XDrive = articulationBodies[joint].xDrive;
-                            joint1XDrive.target = lastJointState[joint] + (result[joint] - lastJointState[joint]) * (1.0f / steps) * i;
-                            articulationBodies[joint].xDrive = joint1XDrive;
-                        }
+			yield return null;
+		}
+		
+		var currentJointConfig = CurrentJointConfig(response.arm);
+		float[] lastJointState = {
+			(float)currentJointConfig.joint_00,
+			(float)currentJointConfig.joint_01,
+			(float)currentJointConfig.joint_02,
+			(float)currentJointConfig.joint_03,
+			(float)currentJointConfig.joint_04,
+			(float)currentJointConfig.joint_05,
+			(float)currentJointConfig.joint_06,
+		};
+		// For every trajectory plan returned
+		int steps = 100;
+		var articulationBodies = leftJointArticulationBodies;
+		if (response.arm == "right")
+		{
+			articulationBodies = rightJointArticulationBodies;
+		}
+		for (int poseIndex = 0; poseIndex < response.trajectory.Length; poseIndex++)
+		{
+			// For every robot pose in trajectory plan
+			for (int jointConfigIndex = 0; jointConfigIndex < response.trajectory[poseIndex].joint_trajectory.points.Length; jointConfigIndex++)
+			{
+				var jointPositions = response.trajectory[poseIndex].joint_trajectory.points[jointConfigIndex].positions;
+				float[] result = jointPositions.Select(r => (float)r * Mathf.Rad2Deg).ToArray();
+				for (int i = 0; i <= steps; i++)
+				{
+					for (int joint = 0; joint < articulationBodies.Length; joint++)
+					{
+						var joint1XDrive = articulationBodies[joint].xDrive;
+						joint1XDrive.target = lastJointState[joint] + (result[joint] - lastJointState[joint]) * (1.0f / steps) * i;
+						articulationBodies[joint].xDrive = joint1XDrive;
+					}
 
-                        yield return new WaitForSeconds(jointAssignmentWait);
+					yield return new WaitForSeconds(jointAssignmentWait);
 
-                    }
+				}
 
-                    // Wait for robot to achieve pose for all joint assignments
-                    lastJointState = result;
+				// Wait for robot to achieve pose for all joint assignments
+				lastJointState = result;
 
-                }
-				// ELIMINATED DUE TO OBST AVOIDANCE INCOMPATIBILITY
-                /* 
-					if (poseIndex == (int)Poses.PreGrasp)
-						OpenGripper(response.arm);
-					// Close the gripper if completed executing the trajectory for the Grasp pose
-					else if (poseIndex == (int)Poses.Grasp)
-						CloseGripper(response.arm); 
-				*/
-
-                // Wait for the robot to achieve the final pose from joint assignment                
-            }
-            // All trajectories have been executed, open the gripper to place the target cube
-			
+			}
 			// ELIMINATED DUE TO OBST AVOIDANCE INCOMPATIBILITY
-			/*
-				yield return new WaitForSeconds(poseAssignmentWait);
-				OpenGripper(response.arm);
-				yield return new WaitForSeconds(poseAssignmentWait);
-				GoToRestPosition(response.arm);
+			/* 
+				if (poseIndex == (int)Poses.PreGrasp)
+					OpenGripper(response.arm);
+				// Close the gripper if completed executing the trajectory for the Grasp pose
+				else if (poseIndex == (int)Poses.Grasp)
+					CloseGripper(response.arm); 
 			*/
-        }
+
+			// Wait for the robot to achieve the final pose from joint assignment                
+		}
+		
+		yield return null;
+		// All trajectories have been executed, open the gripper to place the target cube
+		
+		// ELIMINATED DUE TO OBST AVOIDANCE INCOMPATIBILITY
+		/*
+			yield return new WaitForSeconds(poseAssignmentWait);
+			OpenGripper(response.arm);
+			yield return new WaitForSeconds(poseAssignmentWait);
+			GoToRestPosition(response.arm);
+		*/
+	
     }
 }

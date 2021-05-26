@@ -13,26 +13,39 @@ namespace RosMessageTypes.HumanBaxterCollaboration
 
         //  empty, since its treated as an event
         //  message to stop current trajectory execution on Unity side
+        public string arm;
 
         public BaxterStopTrajectory()
         {
+            this.arm = "";
+        }
+
+        public BaxterStopTrajectory(string arm)
+        {
+            this.arm = arm;
         }
         public override List<byte[]> SerializationStatements()
         {
             var listOfSerializations = new List<byte[]>();
+            listOfSerializations.Add(SerializeString(this.arm));
 
             return listOfSerializations;
         }
 
         public override int Deserialize(byte[] data, int offset)
         {
+            var armStringBytesLength = DeserializeLength(data, offset);
+            offset += 4;
+            this.arm = DeserializeString(data, offset, armStringBytesLength);
+            offset += armStringBytesLength;
 
             return offset;
         }
 
         public override string ToString()
         {
-            return "BaxterStopTrajectory: ";
+            return "BaxterStopTrajectory: " +
+            "\narm: " + arm.ToString();
         }
     }
 }
