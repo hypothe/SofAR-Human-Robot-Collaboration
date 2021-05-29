@@ -29,7 +29,7 @@ int main(int argc, char **argv){
 	ros::init(argc, argv, "baxter_stop_interface");
 	ros::NodeHandle node_handle;
 
-  stop_pub = node_handle.advertise<human_baxter_collaboration::BaxterStopTrajectory>("/baxter_moveit_stop_trajectory", 1000);
+  stop_pub = node_handle.advertise<human_baxter_collaboration::BaxterStopTrajectory>("/baxter_moveit_trajectory/stop", 1000);
 	ros::Rate loop(5);
 	human_baxter_collaboration::BaxterStopTrajectory empty_msg;
 

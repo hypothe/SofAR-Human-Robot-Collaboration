@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+    <node name="baxter_test_interface_left" pkg="hrc_01" type="baxter_test_interface" args="--wait" output="screen" respawn="false" >
+    <param name="~arm" value="left"/>	
+    </node>
+    <node name="baxter_test_interface_right" pkg="hrc_01" type="baxter_test_interface" args="--wait" output="screen" respawn="false" >
+    <param name="~arm" value="right"/>	
+    </node>
+    <!--node name="baxter_user_interface_left" pkg="hrc_01" type="baxter_user_interface" args="- -wait" output="screen" respawn="false" /-->
+</launch>

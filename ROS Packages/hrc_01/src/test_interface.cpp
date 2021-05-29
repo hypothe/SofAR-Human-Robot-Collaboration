@@ -52,6 +52,8 @@
 #include "human_baxter_collaboration/BaxterTrajectory.h"
 #include "hrc_01/BaxterCmd.h"
 
+
+std::string ARM;
 ros::Publisher traj_pub;
 // The circle constant tau = 2*pi. One tau is one rotation in radians.
 const double tau = 2 * M_PI;
@@ -59,8 +61,9 @@ const double tau = 2 * M_PI;
 // MoveIt operates on sets of joints called "planning groups" and stores them in an object called
 // the `JointModelGroup`. Throughout MoveIt the terms "planning group" and "joint model group"
 // are used interchangably.
-static const std::string ARM = "left";
-static const std::string PLANNING_GROUP = ARM+"_arm";
+/*static const std::string ARM = "left";
+static const std::string PLANNING_GROUP = ARM+"_arm";*/
+
 moveit::planning_interface::MoveGroupInterface *move_group_interface;
 static const std::string PLANNING_GROUP_2 = "right_hand";
 moveit::planning_interface::MoveGroupInterface *mgi_2;
@@ -84,7 +87,7 @@ void RPY2Quat(geometry_msgs::Quaternion* orig_orientation, double r_, double p_,
 }
 
 bool modifyPose(hrc_01::BaxterCmd::Request &req, hrc_01::BaxterCmd::Response &res){
-
+	
 	// retrieve current end effector pose
 	geometry_msgs::PoseStamped current_pose;
 	current_pose = move_group_interface->getCurrentPose();
@@ -150,6 +153,8 @@ bool modifyPose(hrc_01::BaxterCmd::Request &req, hrc_01::BaxterCmd::Response &re
 
   bool success = (move_group_interface->plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
 
+	// move_group_interface->execute(my_plan);
+
   ROS_INFO("Visualizing plan 1 (pose goal) %s", success ? "" : "FAILED");
   
   human_baxter_collaboration::BaxterTrajectory bxtr_traj;
@@ -161,69 +166,20 @@ bool modifyPose(hrc_01::BaxterCmd::Request &req, hrc_01::BaxterCmd::Response &re
   
   return success;
 }
-/*
-bool goalPose(hrc_01::BaxterCmd::Request &req, hrc_01::BaxterCmd::Response &res){
 
-	// retrieve current end effector pose
-	geometry_msgs::PoseStamped current_pose;
-	current_pose = move_group_interface->getCurrentPose();
-	
-	ROS_INFO(	"\nCurrent Position\n"
-						"X: %lf\n"
-						"Y: %lf\n"
-						"Z: %lf\n",
-						current_pose.pose.position.x, current_pose.pose.position.y,
-						current_pose.pose.position.z
-						);
-						
-	ROS_INFO(	"\nCurrent Orientation\n"
-						"X: %lf\n"
-						"Y: %lf\n"
-						"Z: %lf\n"
-						"W: %lf\n",
-						current_pose.pose.orientation.x, current_pose.pose.orientation.y,
-						current_pose.pose.orientation.z, current_pose.pose.orientation.w
-						);
-
-  // .. _move_group_interface-planning-to-pose-goal:
-  //
-  // Planning to a Pose goal
-  // ^^^^^^^^^^^^^^^^^^^^^^^
-  // We can plan a motion for this group to a desired pose for the
-  // end-effector.
-  geometry_msgs::Pose target_pose1 = current_pose.pose;
-  target_pose1.position = req.position;
-  //target_pose1.orientation.x = 0; target_pose1.orientation.y = 0; target_pose1.orientation.z = 0; target_pose1.orientation.w = 1;
-  RPY2Quat(&(target_pose1.orientation), req.rpy.x, req.rpy.y, req.rpy.z);
-  
-  move_group_interface->setPoseTarget(target_pose1);
-  move_group_interface->setGoalTolerance(0.01);
-  //move_group_interface->setGoalOrientationTolerance(tau);
-
-  // Now, we call the planner to compute the plan and visualize it.
-  // Note that we are just planning, not asking move_group_interface
-  // to actually move the robot.
-  moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-
-  bool success = (move_group_interface->plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-
-  ROS_INFO("Visualizing plan 1 (pose goal) %s", success ? "" : "FAILED");
-  
-  human_baxter_collaboration::BaxterTrajectory bxtr_traj;
-  bxtr_traj.arm = "right";
-  bxtr_traj.trajectory.push_back(my_plan.trajectory_);
-  traj_pub.publish(bxtr_traj);	// publish the plan trajectory
-  
-  res.success = success;
-  
-  return success;
-}
-*/
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "baxter_test_interface");
   ros::NodeHandle node_handle;
+		
+	std::string PLANNING_GROUP;
+	
+	if(!ros::param::get("~arm", ARM)){
+  	ROS_ERROR("No parameter called '~arm' found.");
+  	ros::shutdown();
+  }
   
+  PLANNING_GROUP = ARM+"_arm";
 
   // ROS spinning must be running for the MoveGroupInterface to get information
   // about the robot's state. One way to do this is to start an AsyncSpinner
@@ -245,9 +201,7 @@ int main(int argc, char** argv)
 	move_group_interface->setPlanningTime(2);
 	move_group_interface->setNumPlanningAttempts(5);
 	
-	// mgi_2 = new moveit::planning_interface::MoveGroupInterface(PLANNING_GROUP_2);
 	
-	/*
 	// Add table to the environment
 	// ^^^^^^^^^
 	// Now let's define a collision object ROS message for the robot to avoid.
@@ -282,46 +236,15 @@ int main(int argc, char** argv)
   // Now, let's add the collision object into the world
   // (using a vector that could contain additional objects)
   ROS_INFO("Table added into the world");
-  planning_scene_interface.addCollisionObjects(collision_objects);
-	*/
+  planning_scene_interface.applyCollisionObjects(collision_objects);
+	/**/
 	
-  // We will use the :planning_interface:`PlanningSceneInterface`
-  // class to add and remove collision objects in our "virtual world" scene
-  //moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
-
-  // Raw pointers are frequently used to refer to the planning group for improved performance.
-  /*const moveit::core::JointModelGroup* joint_model_group =
-      move_group_interface->getCurrentState()->getJointModelGroup(PLANNING_GROUP);*/
 	// publisher which pubs the trajectories w/ the info about the arm already in
   traj_pub = node_handle.advertise<human_baxter_collaboration::BaxterTrajectory>("/baxter_moveit_trajectory", 1000);
-  // service that gets the user input and updates the current EE pose with that info	
-	/* ros::ServiceServer ui_service = node_handle.advertiseService("/user_interface/pose", modifyPose); */
-	ros::ServiceServer ui_service = node_handle.advertiseService("/user_interface/pose", modifyPose);
-	/*
-  // Getting Basic Information
-  // ^^^^^^^^^^^^^^^^^^^^^^^^^
-  //
-  // We can print the name of the reference frame for this robot.
-  ROS_INFO_NAMED("tutorial", "Planning frame: %s", move_group_interface->getPlanningFrame().c_str());
-
-  // We can also print the name of the end-effector link for this group.
-  ROS_INFO_NAMED("tutorial", "End effector link: %s", move_group_interface->getEndEffectorLink().c_str());
-
-  // We can get a list of all the groups in the robot:
-  ROS_INFO_NAMED("tutorial", "Available Planning Groups:");
-  std::copy(move_group_interface->getJointModelGroupNames().begin(),
-            move_group_interface->getJointModelGroupNames().end(), std::ostream_iterator<std::string>(std::cout, ", "));
-  printf("\n");
-  // We can get a list of all the groups in the robot:
-  
-  // We can also print the name of the end-effector link for this group.
-  ROS_INFO_NAMED("tutorial", "%s End effector link: %s", PLANNING_GROUP_2.c_str(), mgi_2->getEndEffector().c_str());
-  ROS_INFO_NAMED("tutorial", "Available Links %s:", PLANNING_GROUP_2.c_str());
-  std::copy(mgi_2->getLinkNames().begin(),
-            mgi_2->getLinkNames().end(), std::ostream_iterator<std::string>(std::cout, ", "));
-  printf("\n");
-  */
-  // END_TUTORIAL
+  // service that gets the user input and updates the current EE pose with that info
+  std::string ui_srv_name = "/user_interface/pose/"+ARM;
+	ros::ServiceServer ui_service = node_handle.advertiseService(ui_srv_name, modifyPose);
+	
 
   ros::waitForShutdown();
   return 0;
