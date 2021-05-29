@@ -38,6 +38,7 @@ public class BaxterController : MonoBehaviour
     private Transform rightGripperRGameObject;
 	
 	private Dictionary<string, IEnumerator> trajCoroutine = new Dictionary<string, IEnumerator>();
+	private Dictionary<string, int> trajResult = new Dictionary<string, int>();
 
     private string[] jointNames =
     {
@@ -112,6 +113,9 @@ public class BaxterController : MonoBehaviour
         leftGripperL = leftGripperLGameObject.GetComponent<ArticulationBody>();
 		
 		trajCoroutine.Add(side, null);
+		trajResult.Add(side, 0);
+		
+		// ------------------------------------------------------------------------------
 
         side = "right";
         rightJointArticulationBodies = new ArticulationBody[numRobotJoints];
@@ -150,6 +154,7 @@ public class BaxterController : MonoBehaviour
         leftGripperR = leftGripperRGameObject.GetComponent<ArticulationBody>();
 		
 		trajCoroutine.Add(side, null);
+		trajResult.Add(side, 0);
     }
 
     public void GripperLResponse(BaxterGripperOpen response)
@@ -382,7 +387,7 @@ public class BaxterController : MonoBehaviour
 			trajCoroutine[response.arm] = ExecuteTrajectories(response);
 			StartCoroutine(trajCoroutine[response.arm]);
 			
-            Debug.Log("Trajectory returned.");
+            Debug.Log("Trajectory received.");
         }
         else
         {
@@ -399,6 +404,7 @@ public class BaxterController : MonoBehaviour
 		{
 			StopCoroutine(trajCoroutine[response.arm]);
 			trajCoroutine[response.arm] = null;
+			trajResult[response.arm] = -1; //< failed trajectory/ interrupted
 			Debug.Log("Trajectory " + response.arm + " execution stopped.");
 		}
 		else
@@ -466,7 +472,7 @@ public class BaxterController : MonoBehaviour
 
 			// Wait for the robot to achieve the final pose from joint assignment                
 		}
-		
+		trajResult[response.arm] = 1; //< if it arrived up to here consider it a success!
 		yield return null;
 		// All trajectories have been executed, open the gripper to place the target cube
 		
@@ -478,5 +484,42 @@ public class BaxterController : MonoBehaviour
 			GoToRestPosition(response.arm);
 		*/
 	
+    }
+	// reset the value each time, so that it is a one shot operation
+	public bool TrajectorySuccess(string arm){
+		if (!trajResult.ContainsKey(arm))
+		{
+			Debug.LogError("Wrong 'arm' value, received " + arm);
+			return false;
+		}
+		if (trajResult[arm] > 0)
+		{
+			trajResult[arm] = 0;
+			return true;
+		}
+		return false;
+	}
+	// reset the value each time, so that it is a one shot operation
+	public bool TrajectoryFailure(string arm){
+		if (!trajResult.ContainsKey(arm))
+		{
+			Debug.LogError("Wrong 'arm' value, received " + arm);
+			return false;
+		}
+		if (trajResult[arm] < 0)
+		{
+			trajResult[arm] = 0;
+			return true;
+		}
+		return false;
+	}
+	
+    public BaxterResultTrajectory GetBaxterResultTrajectory(string arm, bool success)
+    {
+        var baxterResultTrajectory = new BaxterResultTrajectory();
+        baxterResultTrajectory.arm = arm;
+        baxterResultTrajectory.success = success;
+
+        return baxterResultTrajectory;
     }
 }

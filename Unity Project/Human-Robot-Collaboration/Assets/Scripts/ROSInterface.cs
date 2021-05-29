@@ -9,7 +9,8 @@ public class ROSInterface : MonoBehaviour
     
     // Variables required for ROS communication
     public string trajectoryTopicName = "baxter_moveit_trajectory";
-    public string stopTrajectoryTopicName = "baxter_moveit_stop_trajectory";
+    public string stopTrajectoryTopicName = "baxter_moveit_trajectory/stop";
+    public string resultTrajectoryTopicName = "baxter_moveit_trajectory/result";
     public string unityTfTopicName = "unity_tf";
     public string jointStateTopicName = "baxter_joint_states";
     public string gripperLTopicName = "robot/limb/left/left_gripper";
@@ -24,16 +25,21 @@ public class ROSInterface : MonoBehaviour
     private bool simStarted;
     private float timeElapsedTf;
     private float timeElapsedJS;
+    private float timeElapsedResult;
     private float publishTfFrequency;
     private float publishJSFrequency;
+    private float publishResultFrequency;
+	private string[] arms_ = {"left", "right"};
 
     void Start()
     {
         simStarted = false;
         timeElapsedTf = 0;
         timeElapsedJS = 0;
+        timeElapsedResult = 0;
         publishTfFrequency = 0.05f;
         publishJSFrequency = 1.0f;
+        publishResultFrequency = 1.0f;
 
         // Get ROS connection static instance
         ros = ROSConnection.instance;
@@ -68,6 +74,7 @@ public class ROSInterface : MonoBehaviour
         {
             timeElapsedTf += Time.deltaTime;
             timeElapsedJS += Time.deltaTime;
+            timeElapsedResult += Time.deltaTime;
 
             if (timeElapsedTf > publishTfFrequency)
             {
@@ -84,6 +91,27 @@ public class ROSInterface : MonoBehaviour
 
                 timeElapsedJS = 0;
             }
+			
+			// retrieve the status of each joint
+			// if any of them is in a status different from "waiting" publish it
+			if (timeElapsedResult > publishResultFrequency)
+            {
+				foreach (string arm in arms_){
+					if (controller.TrajectorySuccess(arm))
+					{
+						BaxterResultTrajectory baxterResultTrajectory = controller.GetBaxterResultTrajectory(arm, true);
+						ros.Send(resultTrajectoryTopicName, baxterResultTrajectory);
+						Debug.Log("Sent Trajectory SUCCESS");
+					}
+					else if (controller.TrajectoryFailure(arm))
+					{
+						BaxterResultTrajectory baxterResultTrajectory = controller.GetBaxterResultTrajectory(arm, false);
+						ros.Send(resultTrajectoryTopicName, baxterResultTrajectory);
+						Debug.Log("Sent Trajectory FAILURE");
+					}
+				}
+				timeElapsedResult = 0;
+			}
             
         }
     }
