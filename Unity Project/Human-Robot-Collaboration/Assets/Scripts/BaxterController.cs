@@ -380,6 +380,7 @@ public class BaxterController : MonoBehaviour
 				StopCoroutine(trajCoroutine[response.arm]);
 			}
 			trajCoroutine[response.arm] = ExecuteTrajectories(response);
+			StartCoroutine(trajCoroutine[response.arm]);
 			
             Debug.Log("Trajectory returned.");
         }
