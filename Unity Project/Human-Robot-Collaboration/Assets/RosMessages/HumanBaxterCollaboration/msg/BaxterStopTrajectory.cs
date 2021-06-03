@@ -11,8 +11,8 @@ namespace RosMessageTypes.HumanBaxterCollaboration
     {
         public const string RosMessageName = "human_baxter_collaboration/BaxterStopTrajectory";
 
-        //  empty, since its treated as an event
         //  message to stop current trajectory execution on Unity side
+        //  empty, since its treated as an event
         public string arm;
 
         public BaxterStopTrajectory()

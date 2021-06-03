@@ -203,8 +203,8 @@ public class BaxterController : MonoBehaviour
             var leftDrive = leftGripperR.xDrive;
             var rightDrive = rightGripperR.xDrive;
 
-            leftDrive.target = 0.005f;
-            rightDrive.target = -0.005f;
+            leftDrive.target = 0.0025f;
+            rightDrive.target = -0.0025f;
 
             leftGripperR.xDrive = leftDrive;
             rightGripperR.xDrive = rightDrive;
@@ -218,8 +218,8 @@ public class BaxterController : MonoBehaviour
             var leftDrive = leftGripperL.xDrive;
             var rightDrive = rightGripperL.xDrive;
 
-            leftDrive.target = 0.025f;
-            rightDrive.target = -0.025f;
+            leftDrive.target = 0.030f;
+            rightDrive.target = -0.030f;
 
             leftGripperL.xDrive = leftDrive;
             rightGripperL.xDrive = rightDrive;
@@ -230,8 +230,8 @@ public class BaxterController : MonoBehaviour
             var leftDrive = leftGripperR.xDrive;
             var rightDrive = rightGripperR.xDrive;
 
-            leftDrive.target = 0.025f;
-            rightDrive.target = -0.025f;
+            leftDrive.target = 0.030f;
+            rightDrive.target = -0.030f;
 
             leftGripperR.xDrive = leftDrive;
             rightGripperR.xDrive = rightDrive;
