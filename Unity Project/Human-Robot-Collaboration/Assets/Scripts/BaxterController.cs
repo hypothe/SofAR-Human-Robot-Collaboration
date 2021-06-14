@@ -276,7 +276,8 @@ public class BaxterController : MonoBehaviour
 
     private IEnumerator GoToRestLeft()
     {
-        float[] target = { -30f, -70f, 0f, 99f, 0f, 43f, 0f };
+        //float[] target = { -30f, -70f, 0f, 99f, 0f, 43f, 0f };
+        float[] target = { -0.5f, -57f, -68f, 110f, 38f, 59f, -29f };
         var currentJointConfig = CurrentJointConfig("left");
         float[] lastJointState = {
                 (float)currentJointConfig.joint_00,
@@ -303,7 +304,8 @@ public class BaxterController : MonoBehaviour
 
     private IEnumerator GoToRestRight()
     {
-        float[] target = { 30.0f, -70.0f, 0f, 99.0f, 0f, 43.0f, 0f };
+        //float[] target = { 30.0f, -70.0f, 0f, 99.0f, 0f, 43.0f, 0f };
+        float[] target = { 0.5f, -57f, 68f, 110f, -38f, 59f, 29f };
         var currentJointConfig = CurrentJointConfig("right");
         float[] lastJointState = {
                 (float)currentJointConfig.joint_00,
@@ -431,7 +433,7 @@ public class BaxterController : MonoBehaviour
 			(float)currentJointConfig.joint_06,
 		};
 		// For every trajectory plan returned
-		int steps = 100;
+		int steps = 100; // 100
 		var articulationBodies = leftJointArticulationBodies;
 		if (response.arm == "right")
 		{

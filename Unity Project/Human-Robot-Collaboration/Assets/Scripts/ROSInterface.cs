@@ -13,8 +13,10 @@ public class ROSInterface : MonoBehaviour
     public string resultTrajectoryTopicName = "baxter_moveit_trajectory/result";
     public string unityTfTopicName = "unity_tf";
     public string jointStateTopicName = "baxter_joint_states";
+    //public string gripperLTopicName = "baxter/end_effector/left_gripper/gripper_open";
     public string gripperLTopicName = "robot/limb/left/left_gripper";
     public string gripperRTopicName = "robot/limb/right/right_gripper";
+	// public string gripperLTopicName = "robot/end_effector/left_gripper/gripper_action/goal";
 
     public GameObject baxter;
     public GameObject avatar;
